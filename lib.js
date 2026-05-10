@@ -32,11 +32,12 @@ function tiLegacy(year) {
   return c.march_2026_ti_dot + c.legacy_inflation * c.legacy_baseline_dot * yearsSince;
 }
 
-// Analytic derivative — yearly emission rate at exact year point
+// Average yearly emission across the 2-year curve step starting at `year`.
+// Matches forum-cited "55.8M post-transition" rate for the 2026-2027 period.
 function yearlyEmission(year) {
   const c = CFG.issuance_curve;
-  const remaining = c.hard_cap_dot - tiNew(year);
-  return remaining * (-Math.log(1 - c.bi_annual_rate)) / c.step_period_years;
+  const step = c.step_period_years || 2;
+  return (tiNew(year + step) - tiNew(year)) / step;
 }
 
 // Self-stake incentive curve — mirrors reward.rs::incentive_weight

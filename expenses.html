@@ -96,9 +96,12 @@ function initState() {
 
 function buildYearSelect() {
   const sel = document.getElementById('year-select');
-  for (let y = CFG.inputs.year.min; y <= CFG.inputs.year.max; y++) {
+  // 2-year periods aligned to the issuance curve's step.
+  // value = period start year; emission = avg over (start, start+2)
+  for (let y = CFG.inputs.year.min; y <= CFG.inputs.year.max - 1; y += 2) {
     const opt = document.createElement('option');
-    opt.value = y; opt.textContent = y;
+    opt.value = y;
+    opt.textContent = `${y}–${y + 1}`;
     if (y === STATE.year) opt.selected = true;
     sel.appendChild(opt);
   }
