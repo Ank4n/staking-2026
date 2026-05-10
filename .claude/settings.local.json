@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(gh pr *)",
+      "Read(//tmp/**)",
+      "Bash(gh api *)",
+      "Bash(gh search *)",
+      "WebFetch(domain:hackmd.io)",
+      "WebFetch(domain:forum.polkadot.network)",
+      "WebFetch(domain:polkadot.subsquare.io)",
+      "Bash(curl -s \"https://raw.githubusercontent.com/paritytech/polkadot-sdk/master/substrate/frame/dap/src/lib.rs\")",
+      "Bash(curl -s \"https://raw.githubusercontent.com/paritytech/polkadot-sdk/master/substrate/frame/staking-async/src/lib.rs\")",
+      "Bash(curl -s \"https://raw.githubusercontent.com/paritytech/polkadot-sdk/master/cumulus/parachains/runtimes/assets/asset-hub-westend/src/staking.rs\")",
+      "Bash(curl -s \"https://raw.githubusercontent.com/paritytech/polkadot-sdk/master/cumulus/parachains/runtimes/assets/asset-hub-westend/src/lib.rs\")"
+    ]
+  }
+}

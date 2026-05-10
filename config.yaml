@@ -1,0 +1,188 @@
+# Staking Economics Simulator — config
+#
+# This file is the single source of truth for the simulator. The HTML loads it
+# at startup. Edit values here and refresh — no code changes needed.
+#
+# Conventions:
+#   - DOT amounts are in whole DOT (not planck).
+#   - Percentages are 0–1 floats unless suffixed `_pct` (which are 0–100).
+#   - `id` fields match the slider/element ID in the HTML (don't rename without updating the HTML).
+#   - `pallet_ref` fields are exact Rust identifiers — used in tooltips, do not invent.
+
+meta:
+  title: "Polkadot staking — economic simulator"
+  subtitle: "Drag the knobs governance can actually turn. Everything else is computed."
+  today_date: "2026-05-10"
+  dot_price_usd: 1.33 # used for $ conversions everywhere
+  assumed_leak_pct:
+    50 # % of DOT rewards assumed to leave the economy.
+    # No on-chain measurement — rough estimate from staking.md slide 1
+    # (taxes, fiat conversion). Surface as "assumed" in the UI.
+
+# ---------------------------------------------------------------------------
+# Issuance curve constants (Ref 1710, AHP runtime)
+# These are FIXED on-chain — not exposed as inputs. The simulator displays
+# values computed from them, but doesn't let the user change them.
+# ---------------------------------------------------------------------------
+issuance_curve:
+  hard_cap_dot: 2_100_000_000 # HARD_CAP_TARGET
+  bi_annual_rate: 0.2628 # BI_ANNUAL_RATE (26.28%)
+  step_period_years: 2
+  march_2026_ti_dot: 1_674_342_153 # MARCH_2026_TI (planck) / 10^10 — total DOT on 14 Mar 2026
+  current_ti_dot: 1_675_000_000 # total issuance today, approx (display only — confirm on-chain)
+  legacy_inflation: 0.08 # Ref 1139 — flat 8% (for "before" comparison)
+  legacy_baseline_dot: 521_634_240 # fixed_total_issuance (planck) / 10^10 — used by legacy curve
+  max_era_emission_dot: 2_301_579 # 7 × PRE_HARD_CAP_DAILY_EMISSION (display only)
+
+# ---------------------------------------------------------------------------
+# Network baseline (today's chain state — used for income projections)
+# ---------------------------------------------------------------------------
+network:
+  active_validators_today: 600
+  active_validators_future: 300 # slide 16 trajectory
+  min_validator_stake_dot: 1_276_095 # smallest currently-active validator's backing
+  total_staked_dot: 885_012_465 # sum across active set today
+
+# ---------------------------------------------------------------------------
+# INPUTS — what the user can drag
+# ---------------------------------------------------------------------------
+inputs:
+  year:
+    id: year
+    label: "Year"
+    default: 2026
+    min: 2026
+    max: 2036
+    step: 1
+
+  dap_split: # BudgetAllocation, must sum to 100
+    id: dap_split
+    label: "DAP budget split"
+    pallet_ref: "BudgetAllocation"
+    extrinsic: "dap.set_budget_allocation"
+    items:
+      - id: buffer
+        label: "Buffer (governance reserve)"
+        budget_key: 'b"buffer"'
+        default_pct: 15
+        note: "Absorbs slashes, burns, fees, treasury redirects. Governance can redirect."
+      - id: staker_rewards
+        label: "Staker rewards"
+        budget_key: 'b"staker_rewards"'
+        default_pct: 85
+      - id: validator_incentive
+        label: "Validator incentive"
+        budget_key: 'b"validator_incentive"'
+        default_pct: 0
+      - id: pusd_operational # only visible when modes.pusd is on
+        label: "Operational pUSD"
+        budget_key: 'b"operational"' # speculative key
+        default_pct: 0
+        only_when: modes.pusd
+
+  validator_probe:
+    id: validator_probe
+    label: "Probe validator earnings"
+    items:
+      - id: own_stake
+        label: "Validator self-stake (DOT)"
+        default: 30_000
+        min: 0
+        max: 1_000_000
+        step: 1_000
+      - id: commission_pct
+        label: "Validator commission"
+        default: 5
+        min: 0
+        max: 100
+        step: 1
+        unit: "%"
+      - id: backed_by_dot
+        label: "Backed-by stake (nominators)"
+        default: 2_000_000
+        min: 0
+        max: 10_000_000
+        step: 50_000
+
+  mean_self_stake: # network-wide assumption — used to normalize incentive pot shares
+    id: mean_self_stake
+    label: "Mean validator self-stake (network)"
+    default: 200_000
+    min: 10_000
+    max: 1_000_000
+    step: 10_000
+    note: "Used to estimate any one validator's share of the incentive pot. Actual chain mean — set to your best guess."
+
+  pusd_amount: # only relevant when modes.pusd is on
+    id: pusd_amount
+    label: "Validator operational pay (pUSD/month)"
+    default: 2000
+    min: 0
+    max: 10000
+    step: 100
+    unit: "$"
+
+# ---------------------------------------------------------------------------
+# Mode toggles
+# ---------------------------------------------------------------------------
+# DAP is always on at PAH 2.3.0. Self-stake "active" = validator_incentive > 0
+# in the budget split. Only the pUSD stream is a separate mode (Q4 plan).
+modes:
+  pusd:
+    id: pusd
+    label: "pUSD operational stream (Q4)"
+    default: false
+    note: "Adds 4th DAP destination; validators paid in pUSD"
+
+# ---------------------------------------------------------------------------
+# Self-stake incentive curve — frozen defaults, NOT user-editable
+# (matches PR 1159 spec target, applied internally for income calc)
+# ---------------------------------------------------------------------------
+self_stake_curve:
+  optimum_dot: 30_000 # OptimumSelfStake (T)
+  hard_cap_dot: 100_000 # HardCapSelfStake (C)
+  slope_factor: 0.5 # SelfStakeSlopeFactor (k)
+
+# ---------------------------------------------------------------------------
+# KPI strip — order = display order
+# ---------------------------------------------------------------------------
+kpis:
+  - id: cost_to_protocol
+    label: "Security spend / year (inflation cost)"
+    formula: "yearly_emission_dot × dot_price_usd"
+    unit: "DOT + USD"
+  - id: effective_inflation
+    label: "Effective inflation"
+    formula: "yearly_emission / total_issuance"
+    unit: "%"
+  - id: leaked
+    label: "Assumed leak from DOT economy"
+    formula: "cost_to_protocol_usd × assumed_leak_pct"
+    unit: "$M/yr"
+    note: "Estimate, not measured"
+  - id: validator_set_size
+    label: "Active validators"
+    formula: "static — 600 today, 300 future"
+    unit: "count"
+
+# ---------------------------------------------------------------------------
+# Scenario presets (header buttons)
+# ---------------------------------------------------------------------------
+presets:
+  - id: launch
+    label: "PAH 2.3.0 launch"
+    sets:
+      modes.pusd: false
+      dap_split.buffer: 15
+      dap_split.staker_rewards: 85
+      dap_split.validator_incentive: 0
+
+# ---------------------------------------------------------------------------
+# Sources — for tooltip footnotes
+# ---------------------------------------------------------------------------
+sources:
+  hard_cap: "Ref 1710 — HARD_CAP_TARGET in asset-hub-polkadot/src/staking/mod.rs"
+  bi_annual_rate: "Ref 1710 — BI_ANNUAL_RATE = 26.28% per 2 years"
+  budget_allocation: "pallet-dap — BudgetAllocation storage; set_budget_allocation extrinsic"
+  self_stake_curve: "pallet-staking-async — reward.rs::incentive_weight; OptimumSelfStake / HardCapSelfStake / SelfStakeSlopeFactor"
+  pusd_stream: "Q4 2026 plan — direction approved, mechanics (CR, vault) still open"
