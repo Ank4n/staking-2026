@@ -1,0 +1,1109 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Staking · presentation</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/js-yaml@4.1.0/dist/js-yaml.min.js"></script>
+  <script src="lib.js"></script>
+</head>
+<body class="deck">
+
+<!--
+  Layout: a single .deck container holds .section blocks (horizontal axis).
+  Each .section holds .slide blocks (vertical axis). Only one slide is visible at a time —
+  CSS shows the slide whose data-pos="active". Navigation is a 2D grid:
+    →  next subslide if any, else first slide of next section
+    ←  previous subslide if any, else last slide of previous section
+    ↓  next subslide in current section (no wrap)
+    ↑  previous subslide in current section (no wrap)
+-->
+
+<div class="deck-stage" id="stage">
+  <!-- ━━━━━━━ Section: WHY ━━━━━━━ -->
+  <section class="deck-section" data-section="why" data-title="Why">
+
+    <div class="slide slide-title">
+      <div class="slide-eyebrow">Why</div>
+      <h1>Why change staking at all?</h1>
+    </div>
+
+    <div class="slide slide-statement" data-hook="bucket">
+      <div class="slide-eyebrow">Why · 1 of 4</div>
+      <h2>Cost outruns value captured.</h2>
+      <p class="slide-detail">The protocol earns almost nothing. It pays out ~70M DOT/yr in rewards and treasury. Most of that gets sold for fiat — leaves the DOT economy.</p>
+
+      <div class="bucket-stage">
+        <svg id="bucket-svg" viewBox="0 0 1400 720" preserveAspectRatio="xMidYMid meet">
+          <defs>
+            <linearGradient id="dotFill" x1="0" x2="0" y1="0" y2="1">
+              <stop offset="0%" stop-color="#e6007a" stop-opacity="0.45"/>
+              <stop offset="100%" stop-color="#e6007a" stop-opacity="0.18"/>
+            </linearGradient>
+          </defs>
+          <!-- IN labels -->
+          <g class="bucket-ins"></g>
+          <!-- Bucket -->
+          <g class="bucket-body">
+            <!-- Liquid level (drawn first so it sits behind the rim) -->
+            <path class="bucket-liquid" d="M 586 280 L 814 280 L 808 494 L 592 494 Z" fill="url(#dotFill)" />
+            <!-- Bucket walls -->
+            <path d="M 580 280 L 820 280 L 810 500 L 590 500 Z"
+                  fill="none" stroke="var(--accent)" stroke-width="3"/>
+            <!-- Rim -->
+            <ellipse cx="700" cy="280" rx="120" ry="18" fill="none" stroke="var(--accent)" stroke-width="3"/>
+          </g>
+          <!-- Holes & outflow streams -->
+          <g class="bucket-outs"></g>
+        </svg>
+
+        <div class="bucket-controls">
+          <label class="leak-slider">
+            <span class="leak-label">% of outflow that leaves DOT economy
+              <b id="leak-val">50%</b>
+            </span>
+            <input type="range" id="leak-slider" min="0" max="100" step="5" value="50">
+            <div class="leak-stops">
+              <span>0% (all stays)</span>
+              <span>100% (all leaves)</span>
+            </div>
+          </label>
+          <div class="leak-readout" id="leak-readout"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide slide-statement">
+      <div class="slide-eyebrow">Why · 2 of 4</div>
+      <h2>Security tracks price. Price has slipped.</h2>
+      <p class="slide-detail">An attacker needs <b>⅓ of validators</b> — the cheapest path to halt finality. Each slot costs the smallest active backing (~1.28M DOT today). The dollar cost moves with DOT price.</p>
+
+      <div class="attack-stage">
+        <!-- Hero readout (huge) -->
+        <div class="attack-hero">
+          <div class="hero-label">Cost of attack</div>
+          <div class="hero-big" id="attack-big">—</div>
+          <div class="hero-sub" id="attack-caption">—</div>
+        </div>
+
+        <!-- Line chart: DOT price vs cost-of-attack -->
+        <div class="attack-chart">
+          <svg id="attack-svg" viewBox="0 0 600 360" preserveAspectRatio="xMidYMid meet"></svg>
+        </div>
+
+        <!-- Slider controls -->
+        <div class="attack-controls">
+          <label>
+            <span>Drag DOT price</span>
+            <span class="val" id="price-val">$1.33</span>
+          </label>
+          <input type="range" id="price-slider" min="0" max="4" step="1" value="0">
+          <div class="stops" id="price-stops"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="slide slide-statement" data-hook="skinGrid">
+      <div class="slide-eyebrow">Why · 3 of 4</div>
+      <h2>We are overpaying nominators.</h2>
+
+      <div class="overpay-grid">
+        <!-- Row 1: numbers — how much / who they back -->
+        <div class="overpay-stat">
+          <div class="overpay-stat-label">We paid nominators in 2025</div>
+          <div class="overpay-stat-num">~92M DOT</div>
+          <div class="overpay-stat-detail">120M issuance × 85% stakers × 90% nominators</div>
+        </div>
+
+        <div class="overpay-back">
+          <div class="overpay-stat-label">Who they back · 1 March 2026</div>
+          <div class="overpay-back-rows">
+            <div class="overpay-row">
+              <span class="overpay-dot" style="background:#e6007a"></span>
+              <span class="overpay-count">462</span>
+              <span class="overpay-label">validators with zero self-stake</span>
+            </div>
+            <div class="overpay-row">
+              <span class="overpay-dot" style="background:#f5c451"></span>
+              <span class="overpay-count">83</span>
+              <span class="overpay-label">some bond, under 10k DOT</span>
+            </div>
+            <div class="overpay-row">
+              <span class="overpay-dot" style="background:#7bd88f"></span>
+              <span class="overpay-count">55</span>
+              <span class="overpay-label">≥ 10k DOT bonded</span>
+            </div>
+          </div>
+          <div class="overpay-source">Source: <a href="https://dakk.github.io/polkapredict/#polkadot" target="_blank">polkapredict</a></div>
+        </div>
+
+        <!-- Row 2: what they're paid to do vs what they do -->
+        <div class="overpay-card theory">
+          <div class="overpay-icon">
+            <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="26" cy="26" r="14"/>
+              <line x1="36" y1="36" x2="50" y2="50"/>
+              <polyline points="20,26 25,31 33,21"/>
+            </svg>
+          </div>
+          <div class="overpay-stat-label">What we pay them to do</div>
+          <div class="overpay-headline">Curate validators</div>
+          <div class="overpay-body">Pick good ones. Watch uptime. Switch when performance drops.</div>
+        </div>
+
+        <div class="overpay-card reality">
+          <div class="overpay-icon">
+            <svg viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <!-- closed eye: single arc with three lashes -->
+              <path d="M 10 36 Q 32 22 54 36"/>
+              <line x1="18" y1="38" x2="16" y2="44"/>
+              <line x1="32" y1="40" x2="32" y2="46"/>
+              <line x1="46" y1="38" x2="48" y2="44"/>
+            </svg>
+          </div>
+          <div class="overpay-stat-label">What they actually do</div>
+          <div class="overpay-headline">Set once, collect</div>
+          <div class="overpay-body">Stake stays put for months. Switching is rare.</div>
+        </div>
+
+        <!-- Row 3: visual evidence -->
+        <div class="skin-grid" id="skin-grid"></div>
+      </div>
+    </div>
+
+    <div class="slide slide-statement">
+      <div class="slide-eyebrow">Why · 4 of 4</div>
+      <h2>Where we are. Where we want to be.</h2>
+
+      <div class="summary-grid">
+        <div class="summary-card have">
+          <div class="summary-label">What we have</div>
+          <ul class="summary-list">
+            <li><b>Cost outruns value.</b> ~76k DOT/yr in. ~70M DOT/yr out.</li>
+            <li><b>Security tracks DOT price.</b> $339M to attack today. $25.5B at peak.</li>
+            <li><b>We overpay nominators.</b> ~92M DOT in 2025 to back 462 zero-self-stake validators.</li>
+          </ul>
+        </div>
+
+        <div class="summary-card want">
+          <div class="summary-label">What we want</div>
+          <ul class="summary-list">
+            <li><b>Reduce overall cost</b> of securing the network.</li>
+            <li>Lower <b>nominator APY</b> — pay less for curation we don't get.</li>
+            <li>Use the savings: <b>more to validators</b> (skin-in-the-game), <b>more to buffer</b>.</li>
+            <li>Pay validator <b>infra costs in fiat</b> — when DOT goes up, our cost stays flat.</li>
+            <li>Build <b>savings</b> for when issuance shrinks further.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ━━━━━━━ Section: WHAT ━━━━━━━ -->
+  <section class="deck-section" data-section="what" data-title="What">
+
+    <div class="slide slide-title">
+      <div class="slide-eyebrow">What</div>
+      <h1>What's being built?</h1>
+    </div>
+
+    <div class="slide slide-statement" data-hook="bucketCut">
+      <div class="slide-eyebrow">What · 1</div>
+      <h2>We cut the issuance.</h2>
+      <p class="slide-detail">Ref 1710 — enacted 14 March 2026. Hard-pressure issuance model.</p>
+
+      <div class="cut-hero">
+        <div class="cut-num cut-before"><span class="cut-strike">120M</span> <span class="cut-unit">DOT/yr</span></div>
+        <div class="cut-arrow">→</div>
+        <div class="cut-num cut-after">55.8M <span class="cut-unit">DOT/yr</span></div>
+        <div class="cut-delta">−42%</div>
+      </div>
+
+      <div class="step-chart-wrap">
+        <div class="step-chart-caption">And the cuts continue every 2 years — issuance approaches the 2.1B cap asymptotically.</div>
+        <svg class="step-chart" id="step-chart" viewBox="0 0 1200 360" preserveAspectRatio="xMidYMid meet"></svg>
+      </div>
+    </div>
+
+    <div class="slide">
+      <div class="slide-eyebrow">What · 2</div>
+      <h2>Budget splitting.</h2>
+
+      <div class="splitter-grid">
+        <!-- BEFORE -->
+        <div class="splitter-card splitter-before">
+          <div class="splitter-label">Before</div>
+          <div class="splitter-tag">Two fixed buckets. Staking mints.</div>
+          <svg class="splitter-svg" viewBox="0 0 600 320" preserveAspectRatio="xMidYMid meet">
+            <defs>
+              <marker id="arrhead-before" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L6,3 L0,6" fill="var(--warn)"/></marker>
+            </defs>
+            <!-- Source -->
+            <circle cx="120" cy="160" r="50" fill="var(--panel-2)" stroke="var(--warn)" stroke-width="2.5"/>
+            <text x="120" y="156" text-anchor="middle" font-size="15" font-weight="700" fill="var(--fg)">Staking</text>
+            <text x="120" y="174" text-anchor="middle" font-size="11" fill="var(--muted)">pallet</text>
+            <!-- Two destinations -->
+            <path d="M 170 160 C 230 160, 280 90, 380 90" stroke="var(--warn)" stroke-width="6" fill="none" marker-end="url(#arrhead-before)" opacity="0.85"/>
+            <path d="M 170 160 C 230 160, 280 230, 380 230" stroke="var(--warn)" stroke-width="2" fill="none" marker-end="url(#arrhead-before)" opacity="0.7"/>
+            <!-- Pots -->
+            <rect x="390" y="62" width="200" height="56" rx="6" fill="var(--panel-2)" stroke="var(--border)"/>
+            <text x="404" y="86" font-size="14" font-weight="600" fill="var(--fg)">Stakers</text>
+            <text x="404" y="106" font-size="13" fill="var(--warn)" font-variant-numeric="tabular-nums">85%</text>
+            <rect x="390" y="202" width="200" height="56" rx="6" fill="var(--panel-2)" stroke="var(--border)"/>
+            <text x="404" y="226" font-size="14" font-weight="600" fill="var(--fg)">Treasury</text>
+            <text x="404" y="246" font-size="13" fill="var(--warn)" font-variant-numeric="tabular-nums">15%</text>
+          </svg>
+        </div>
+
+        <!-- AFTER -->
+        <div class="splitter-card splitter-after">
+          <div class="splitter-label">Now</div>
+          <div class="splitter-tag">Any number of buckets. OpenGov sets %. Validator and nominator separate.</div>
+          <svg class="splitter-svg" viewBox="0 0 600 320" preserveAspectRatio="xMidYMid meet">
+            <defs>
+              <marker id="arrhead-after-buf" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L6,3 L0,6" fill="#56b4e9"/></marker>
+              <marker id="arrhead-after-stk" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L6,3 L0,6" fill="var(--accent)"/></marker>
+              <marker id="arrhead-after-val" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="5" markerHeight="5" orient="auto"><path d="M0,0 L6,3 L0,6" fill="#7bd88f"/></marker>
+            </defs>
+            <!-- Source -->
+            <circle cx="120" cy="160" r="50" fill="var(--panel-2)" stroke="var(--accent)" stroke-width="2.5"/>
+            <text x="120" y="156" text-anchor="middle" font-size="15" font-weight="700" fill="var(--fg)">DAP</text>
+            <text x="120" y="174" text-anchor="middle" font-size="11" fill="var(--muted)">pallet</text>
+            <!-- Three destinations + a hint of more -->
+            <path d="M 170 160 C 230 160, 280 50, 380 50" stroke="#56b4e9" stroke-width="3" fill="none" marker-end="url(#arrhead-after-buf)" opacity="0.85"/>
+            <path d="M 170 160 C 230 160, 280 160, 380 160" stroke="var(--accent)" stroke-width="6" fill="none" marker-end="url(#arrhead-after-stk)" opacity="0.85"/>
+            <path d="M 170 160 C 230 160, 280 270, 380 270" stroke="#7bd88f" stroke-width="3" fill="none" marker-end="url(#arrhead-after-val)" opacity="0.85"/>
+            <!-- Pots -->
+            <rect x="390" y="22" width="200" height="56" rx="6" fill="var(--panel-2)" stroke="var(--border)"/>
+            <text x="404" y="46" font-size="13" font-weight="600" fill="var(--fg)">Buffer / Savings</text>
+            <text x="404" y="64" font-size="11" fill="#56b4e9" font-variant-numeric="tabular-nums">15%</text>
+            <rect x="390" y="132" width="200" height="56" rx="6" fill="var(--panel-2)" stroke="var(--border)"/>
+            <text x="404" y="156" font-size="13" font-weight="600" fill="var(--fg)">Staker rewards</text>
+            <text x="404" y="174" font-size="11" fill="var(--accent)" font-variant-numeric="tabular-nums">85% (initial)</text>
+            <rect x="390" y="242" width="200" height="56" rx="6" fill="var(--panel-2)" stroke="var(--border)"/>
+            <text x="404" y="266" font-size="13" font-weight="600" fill="var(--fg)">Validator incentive</text>
+            <text x="404" y="284" font-size="11" fill="#7bd88f" font-variant-numeric="tabular-nums">0% (initial)</text>
+            <!-- "+ more" affordance -->
+            <text x="490" y="312" text-anchor="middle" font-size="11" fill="var(--muted)" font-style="italic">+ any number more</text>
+          </svg>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide">
+      <div class="slide-eyebrow">What · 3</div>
+      <h2>Role changes.</h2>
+
+      <div class="role-grid">
+        <div class="role-card validator">
+          <div class="role-label">Validators</div>
+          <ul class="role-list">
+            <li><b>10k DOT min self-stake</b> — enforced end of May 2026.</li>
+            <li><b>Slashable</b> on the validator's own bond, as before.</li>
+            <li><b>Higher APY</b> via the new <i>validator_incentive</i> pot — target 70% on 30k self-stake.</li>
+            <li><b>Infra costs in pUSD</b> — Q4 2026, paid in stables instead of DOT.</li>
+          </ul>
+        </div>
+
+        <div class="role-card nominator">
+          <div class="role-label">Nominators</div>
+          <ul class="role-list">
+            <li><b>Unslashable</b> — no longer carry validator risk.</li>
+            <li><b>2-day unbond</b> — replaces the 28-day lock.</li>
+            <li><b>Lower APY</b> — target ~3%.</li>
+            <li>Same role: point stake at validators they trust.</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="slide slide-embed" data-hook="embed">
+      <div class="embed-head">
+        <div class="slide-eyebrow">What · 4</div>
+        <a class="embed-popout" href="expenses.html" target="_blank">↗ open full-page</a>
+      </div>
+      <iframe class="embed-frame" id="embed-frame" src="about:blank" title="Protocol expenses simulator"></iframe>
+    </div>
+  </section>
+
+  <!-- ━━━━━━━ Section: WHEN ━━━━━━━ -->
+  <section class="deck-section" data-section="when" data-title="When">
+
+    <div class="slide" data-hook="rolloutPhases">
+      <div class="slide-eyebrow">When</div>
+      <h2>Rollout.</h2>
+
+      <!-- Phase nav: pills you can click; ←/→ also work via the global handler -->
+      <div class="phase-pills" id="phase-pills"></div>
+
+      <!-- Active phase card -->
+      <div class="phase-stage" id="phase-stage"></div>
+
+      <div class="phase-controls">
+        <button class="phase-btn" id="phase-prev" aria-label="previous phase">← prev</button>
+        <div class="phase-counter" id="phase-counter">—</div>
+        <button class="phase-btn" id="phase-next" aria-label="next phase">next →</button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<!-- HUD: section + position -->
+<div class="deck-hud" id="hud">
+  <div class="hud-sections" id="hud-sections"></div>
+  <div class="hud-keys">← → sections · ↑ ↓ within</div>
+</div>
+
+<!-- Home button -->
+<a class="deck-home" href="index.html" title="Back to landing">←</a>
+
+<script>
+// ────────────────────────────────────────────────────────────────────────
+// Deck navigation: 2D grid driven by keyboard
+// ────────────────────────────────────────────────────────────────────────
+
+const sections = [...document.querySelectorAll('.deck-section')];
+const grid = sections.map(s => [...s.querySelectorAll('.slide')]);
+let s = 0, i = 0;
+
+// ── URL hash persistence: stay on the current slide across refresh ──
+function readHash() {
+  const m = location.hash.match(/^#(\d+),(\d+)$/);
+  if (!m) return;
+  const ns = +m[1], ni = +m[2];
+  if (ns >= 0 && ns < grid.length && ni >= 0 && ni < grid[ns].length) {
+    s = ns;
+    i = ni;
+  }
+}
+function writeHash() {
+  const target = `#${s},${i}`;
+  if (location.hash !== target) {
+    history.replaceState(null, '', target);
+  }
+}
+window.addEventListener('hashchange', () => {
+  readHash();
+  show();
+});
+
+function show() {
+  writeHash();
+  // Hide all sections, show only the active one
+  sections.forEach((sec, si) => {
+    sec.style.display = si === s ? 'block' : 'none';
+  });
+  // Within active section, mark only one slide active
+  grid[s].forEach((slide, ii) => {
+    slide.classList.toggle('active', ii === i);
+  });
+  updateHud();
+  // Trigger any per-slide animations
+  const active = grid[s][i];
+  if (active) {
+    // Apply --w on bar-fill from data-grow (can't be done via CSS attr() reliably)
+    active.querySelectorAll('.bar-fill[data-grow]').forEach(el => {
+      el.style.setProperty('--w', (parseFloat(el.dataset.grow) * 100) + '%');
+    });
+    // Restart CSS animations by toggling a class
+    active.classList.remove('animate');
+    void active.offsetWidth; // reflow
+    active.classList.add('animate');
+    // Redraw curve canvas if it lives in this slide (was 0×0 when hidden)
+    if (active.querySelector('#curve-canvas')) redrawCurve();
+  }
+}
+
+function updateHud() {
+  const wrap = document.getElementById('hud-sections');
+  wrap.innerHTML = sections.map((sec, si) => {
+    const isActive = si === s;
+    const dots = grid[si].map((_, ii) => {
+      const filled = si < s ? true : (si === s && ii <= i);
+      const cur = si === s && ii === i;
+      return `<span class="hud-dot ${cur ? 'cur' : ''} ${filled ? 'on' : ''}"></span>`;
+    }).join('');
+    return `<div class="hud-section ${isActive ? 'active' : ''}">
+      <div class="hud-name">${sec.dataset.title}</div>
+      <div class="hud-dots">${dots}</div>
+    </div>`;
+  }).join('');
+}
+
+document.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT') return;  // don't hijack slider keys
+  // Phase navigator on When slide intercepts ←/→ until at the end of phases
+  const active = grid[s] && grid[s][i];
+  if (active && active.dataset.hook === 'rolloutPhases' && DECK_CFG && DECK_CFG.timeline) {
+    const phases = DECK_CFG.timeline.phases;
+    if (e.key === 'ArrowRight' && phaseIdx < phases.length - 1) {
+      phaseIdx++; drawRolloutPhases(); e.preventDefault(); return;
+    }
+    if (e.key === 'ArrowLeft' && phaseIdx > 0) {
+      phaseIdx--; drawRolloutPhases(); e.preventDefault(); return;
+    }
+  }
+  if (e.key === 'ArrowRight') {
+    if (i < grid[s].length - 1) i++;
+    else if (s < grid.length - 1) { s++; i = 0; }
+    show(); e.preventDefault();
+  } else if (e.key === 'ArrowLeft') {
+    if (i > 0) i--;
+    else if (s > 0) { s--; i = grid[s].length - 1; }
+    show(); e.preventDefault();
+  } else if (e.key === 'ArrowDown') {
+    if (i < grid[s].length - 1) { i++; show(); e.preventDefault(); }
+  } else if (e.key === 'ArrowUp') {
+    if (i > 0) { i--; show(); e.preventDefault(); }
+  } else if (e.key === 'Home') {
+    s = 0; i = 0; show(); e.preventDefault();
+  }
+});
+
+// ────────────────────────────────────────────────────────────────────────
+// Per-slide JS hooks
+// ────────────────────────────────────────────────────────────────────────
+const HOOKS = {};
+let DECK_CFG = null;
+let priceWired = false, timelineWired = false, curveWired = false;
+
+(async function() {
+  try {
+    DECK_CFG = await loadConfig();
+  } catch (e) {
+    console.error('config load failed', e);
+  }
+  // Wire interactive bits once they're in the DOM (they are, just inactive).
+  wirePriceWidget();
+  wireTimeline();
+  wireCurve();
+  wireBucket();
+  readHash();   // restore position from #s,i if present
+  show();
+})();
+
+// ── Cost-of-attack widget on Why · slide 3 ──
+function wirePriceWidget() {
+  if (priceWired) return;
+  priceWired = true;
+  const stops = DECK_CFG.meta.dot_price_stops || [1.33, 5, 10, 50, 100];
+  const slider = document.getElementById('price-slider');
+  const priceVal = document.getElementById('price-val');
+  const stopsEl = document.getElementById('price-stops');
+  const big = document.getElementById('attack-big');
+  const caption = document.getElementById('attack-caption');
+  if (!slider) return;
+  slider.max = stops.length - 1;
+  stopsEl.innerHTML = stops.map(s => `<span>$${s}</span>`).join('');
+  // Cost of attack ≈ ⅓ × validators × minimum active backing × DOT price
+  const minStake = DECK_CFG.network.min_validator_stake_dot;
+  const validators = DECK_CFG.network.active_validators_today;
+  const oneThird = Math.ceil(validators / 3);
+  const dotNeeded = oneThird * minStake;
+  const maxCost = dotNeeded * stops[stops.length - 1];
+
+  // ── Chart: DOT price vs cost-of-attack (linear) ──
+  const chartSvg = document.getElementById('attack-svg');
+  const W = 600, H = 360;
+  const padL = 70, padR = 24, padT = 24, padB = 50;
+  const xMax = stops[stops.length - 1];      // $100
+  const yMax = maxCost;                       // $25.5B
+  const sx = (price) => padL + (price / xMax) * (W - padL - padR);
+  const sy = (cost)  => H - padB - (cost / yMax) * (H - padT - padB);
+
+  // y-axis tick values (every $5B)
+  const yTicks = [0, 5e9, 10e9, 15e9, 20e9, 25e9];
+  // x-axis tick values: each price stop
+  const xTicks = stops;
+
+  // Static frame: axes, ticks, line, stop markers
+  function renderChart(activeIdx) {
+    const activePrice = stops[activeIdx];
+    const activeCost = dotNeeded * activePrice;
+    const activeX = sx(activePrice);
+    const activeY = sy(activeCost);
+
+    let html = '';
+
+    // Y grid lines
+    yTicks.forEach(v => {
+      const y = sy(v);
+      html += `<line x1="${padL}" y1="${y}" x2="${W-padR}" y2="${y}" stroke="var(--border)" stroke-width="1" opacity="0.4"/>`;
+      html += `<text x="${padL-10}" y="${y+4}" text-anchor="end" font-size="11" fill="var(--muted)">${v === 0 ? '$0' : '$' + (v/1e9) + 'B'}</text>`;
+    });
+
+    // X axis ticks
+    xTicks.forEach(p => {
+      const x = sx(p);
+      html += `<line x1="${x}" y1="${H-padB}" x2="${x}" y2="${H-padB+5}" stroke="var(--muted)" stroke-width="1"/>`;
+      html += `<text x="${x}" y="${H-padB+22}" text-anchor="middle" font-size="11" fill="var(--muted)">$${p}</text>`;
+    });
+    // Axis labels
+    html += `<text x="${padL + (W-padL-padR)/2}" y="${H-8}" text-anchor="middle" font-size="11" fill="var(--muted)" font-style="italic">DOT price (USD)</text>`;
+    html += `<text x="20" y="${padT + (H-padT-padB)/2}" text-anchor="middle" font-size="11" fill="var(--muted)" font-style="italic" transform="rotate(-90, 20, ${padT + (H-padT-padB)/2})">cost to attack</text>`;
+
+    // The line: from (0, $0) to (xMax, yMax). Linear.
+    html += `<line x1="${sx(0)}" y1="${sy(0)}" x2="${sx(xMax)}" y2="${sy(yMax)}"
+                   stroke="var(--accent)" stroke-width="3" stroke-linecap="round"/>`;
+
+    // Static stop markers
+    stops.forEach((p, i) => {
+      const x = sx(p), y = sy(dotNeeded * p);
+      const isActive = i === activeIdx;
+      const r = isActive ? 8 : 5;
+      html += `<circle cx="${x}" cy="${y}" r="${r}" fill="${isActive ? 'var(--accent)' : 'var(--panel)'}" stroke="var(--accent)" stroke-width="2"/>`;
+    });
+
+    // Crosshair from active point down to x-axis and left to y-axis
+    html += `<line x1="${activeX}" y1="${activeY}" x2="${activeX}" y2="${H-padB}" stroke="var(--accent)" stroke-width="1" stroke-dasharray="3 3" opacity="0.6"/>`;
+    html += `<line x1="${activeX}" y1="${activeY}" x2="${padL}" y2="${activeY}" stroke="var(--accent)" stroke-width="1" stroke-dasharray="3 3" opacity="0.6"/>`;
+
+    // Active value label — auto-position to stay inside the chart
+    const labelW = 116, labelH = 26;
+    let labelX = activeX - labelW/2;
+    // If label would overflow right, shift left of the marker
+    if (labelX + labelW > W - padR) labelX = activeX - labelW - 14;
+    // If label would overflow left, shift right of the marker
+    if (labelX < padL) labelX = activeX + 14;
+    // Vertical: above by default; if too high, render below
+    let labelY = activeY - 38;
+    if (labelY < padT) labelY = activeY + 14;
+    const textY = labelY + 18;
+    html += `<rect x="${labelX}" y="${labelY}" width="${labelW}" height="${labelH}" rx="4" fill="var(--panel-2)" stroke="var(--accent)" stroke-width="1"/>`;
+    html += `<text x="${labelX + labelW/2}" y="${textY}" text-anchor="middle" font-size="13" font-weight="700" fill="var(--accent)" font-variant-numeric="tabular-nums">${fmt.usd(activeCost)}</text>`;
+
+    chartSvg.innerHTML = html;
+  }
+
+  function update() {
+    const idx = +slider.value;
+    const price = stops[idx];
+    priceVal.textContent = '$' + price;
+    big.textContent = fmt.usd(dotNeeded * price);
+    let label;
+    if (idx === 0) label = 'today';
+    else if (price >= 50) label = 'near peak';
+    else if (price >= 10) label = 'past cycle highs';
+    else label = 'mid-cycle';
+    caption.textContent = `at $${price} — ${label} · ${fmt.dot(dotNeeded)} DOT needed`;
+    renderChart(idx);
+  }
+
+  // Click any chart stop marker → set slider
+  chartSvg.addEventListener('click', (e) => {
+    const rect = chartSvg.getBoundingClientRect();
+    const xPct = (e.clientX - rect.left) / rect.width;
+    const xVal = (xPct * W);
+    // Find nearest stop
+    let nearest = 0, nearestDx = 1e9;
+    stops.forEach((p, i) => {
+      const dx = Math.abs(sx(p) - xVal);
+      if (dx < nearestDx) { nearestDx = dx; nearest = i; }
+    });
+    if (nearestDx < 30) {
+      slider.value = nearest;
+      update();
+    }
+  });
+
+  slider.oninput = update;
+  update();
+}
+
+// ── When: phase navigator ──
+function wireTimeline() { /* deferred */ }
+let phaseIdx = 0;
+
+function drawRolloutPhases() {
+  const phases = DECK_CFG && DECK_CFG.timeline && DECK_CFG.timeline.phases;
+  if (!phases || !phases.length) return;
+  if (phaseIdx >= phases.length) phaseIdx = phases.length - 1;
+  if (phaseIdx < 0) phaseIdx = 0;
+
+  // Pills
+  const pillsEl = document.getElementById('phase-pills');
+  pillsEl.innerHTML = phases.map((p, i) => `
+    <button class="phase-pill phase-${p.status} ${i === phaseIdx ? 'active' : ''}" data-i="${i}">
+      <div class="pill-id">${p.label}</div>
+      <div class="pill-when">${p.when}</div>
+    </button>
+  `).join('');
+  pillsEl.querySelectorAll('.phase-pill').forEach(b => {
+    b.onclick = () => { phaseIdx = +b.dataset.i; drawRolloutPhases(); };
+  });
+
+  // Stage — current phase card
+  const p = phases[phaseIdx];
+  const stage = document.getElementById('phase-stage');
+  stage.className = `phase-stage phase-${p.status}`;
+  stage.innerHTML = `
+    <div class="phase-meta">
+      <div class="phase-when">${p.when}</div>
+      <div class="phase-status">${p.status}</div>
+    </div>
+    <div class="phase-title">${p.title}</div>
+    <div class="phase-what">${p.what}</div>
+    <div class="phase-why"><b>Why:</b> ${p.why}</div>
+  `;
+
+  // Counter
+  document.getElementById('phase-counter').textContent = `${phaseIdx + 1} / ${phases.length}`;
+
+  // Buttons
+  const prev = document.getElementById('phase-prev');
+  const next = document.getElementById('phase-next');
+  prev.disabled = phaseIdx === 0;
+  next.disabled = phaseIdx === phases.length - 1;
+  prev.onclick = () => { if (phaseIdx > 0) { phaseIdx--; drawRolloutPhases(); } };
+  next.onclick = () => { if (phaseIdx < phases.length - 1) { phaseIdx++; drawRolloutPhases(); } };
+}
+
+// ── Self-stake curve plot on What · slide 4 ──
+function wireCurve() { /* deferred — sized on first display */ }
+function redrawCurve() {
+  const c = document.getElementById('curve-canvas');
+  if (!c) return;
+  const ctx = c.getContext('2d');
+  const dpr = window.devicePixelRatio || 1;
+  // Schedule for next frame so layout has settled (slide just became visible)
+  requestAnimationFrame(() => {
+    const rect = c.getBoundingClientRect();
+    if (rect.width === 0) return;
+    c.width = rect.width * dpr;
+    c.height = rect.height * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    drawCurve(ctx, rect.width, rect.height);
+  });
+}
+function drawCurve(ctx, W, H) {
+  const padL = 50, padR = 20, padT = 20, padB = 36;
+  const T = DECK_CFG.self_stake_curve.optimum_dot;
+  const C = DECK_CFG.self_stake_curve.hard_cap_dot;
+  const xMax = C * 1.5;
+  const yMax = Math.sqrt(T + (DECK_CFG.self_stake_curve.slope_factor**2) * (C - T)) * 1.05;
+  const sx = (s) => padL + (s / xMax) * (W - padL - padR);
+  const sy = (w) => H - padB - (w / yMax) * (H - padT - padB);
+  ctx.clearRect(0, 0, W, H);
+  // Axes
+  ctx.strokeStyle = '#2c3140';
+  ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(padL, padT); ctx.lineTo(padL, H-padB); ctx.lineTo(W-padR, H-padB); ctx.stroke();
+  // Curve
+  ctx.strokeStyle = '#7bd88f';
+  ctx.lineWidth = 3;
+  ctx.beginPath();
+  for (let s = 0; s <= xMax; s += xMax/200) {
+    const w = incentiveWeight(s);
+    if (s === 0) ctx.moveTo(sx(s), sy(w));
+    else ctx.lineTo(sx(s), sy(w));
+  }
+  ctx.stroke();
+  // Vertical guides at T and C
+  ctx.setLineDash([4, 4]);
+  ctx.strokeStyle = '#f5c451';
+  ctx.beginPath(); ctx.moveTo(sx(T), padT); ctx.lineTo(sx(T), H-padB); ctx.stroke();
+  ctx.fillStyle = '#f5c451';
+  ctx.font = '11px sans-serif';
+  ctx.fillText('T = 30k', sx(T) + 6, padT + 14);
+  ctx.strokeStyle = '#56b4e9';
+  ctx.beginPath(); ctx.moveTo(sx(C), padT); ctx.lineTo(sx(C), H-padB); ctx.stroke();
+  ctx.fillStyle = '#56b4e9';
+  ctx.fillText('C = 100k', sx(C) + 6, padT + 14);
+  ctx.setLineDash([]);
+  // Axis labels
+  ctx.fillStyle = '#8a92a3';
+  ctx.font = '11px sans-serif';
+  ctx.fillText('self-stake →', W/2 - 30, H - 8);
+  ctx.save();
+  ctx.translate(14, H/2 + 40);
+  ctx.rotate(-Math.PI/2);
+  ctx.fillText('weight w(s)', 0, 0);
+  ctx.restore();
+}
+
+// ────────────────────────────────────────────────────────────────────────
+// Leaky-bucket component (used on Why · slide 1, will reused on more)
+// ────────────────────────────────────────────────────────────────────────
+let bucketWired = false;
+const bucketAnims = {};   // per-svgId animation handles
+
+const BUCKET_DEFAULTS = {
+  // All flow values in DOT/yr (matched to sources.md)
+  inflows: [
+    { id: 'fees',      label: 'Fees',          dot: 67_000   },
+    { id: 'coretime',  label: 'Coretime',      dot: 9_180    },
+  ],
+  outflows: [
+    { id: 'stakers',   label: 'Stakers (validators + nominators)', dot: 55_800_000 },
+    { id: 'treasury',  label: 'Treasury',      dot: 14_000_000 },
+  ],
+  leakPct: 50,
+};
+
+function wireBucket() {
+  if (bucketWired) return;
+  bucketWired = true;
+  const slider = document.getElementById('leak-slider');
+  if (!slider) return;
+  slider.oninput = () => {
+    document.getElementById('leak-val').textContent = slider.value + '%';
+    drawBucket('bucket-svg', BUCKET_DEFAULTS, +slider.value, 'leak-readout');
+  };
+  drawBucket('bucket-svg', BUCKET_DEFAULTS, 50, 'leak-readout');
+}
+
+function drawBucket(svgId, cfg, leakPct, readoutId) {
+  const svg = document.getElementById(svgId);
+  if (!svg) return;
+  // Bigger viewBox = uses more screen real estate. Bucket in center.
+  const W = 1400, H = 720;
+  const bucketX = 580, bucketY = 280, bucketW = 240, bucketH = 220;
+  const rimY = bucketY;
+  const baseY = bucketY + bucketH;
+  const leak = leakPct / 100;
+
+  // ── Inflows: top, spread wide ──
+  const insG = svg.querySelector('.bucket-ins');
+  const totalIn = cfg.inflows.reduce((s, x) => s + x.dot, 0);
+  const inSpread = 360; // full width inflow area
+  const inAreaX = bucketX + bucketW/2 - inSpread/2;
+  const inSources = cfg.inflows.map((it, i) => {
+    const x = inAreaX + (inSpread * (i + 0.5)) / cfg.inflows.length;
+    const dropX = bucketX + 24 + ((bucketW - 48) * (i + 0.5)) / cfg.inflows.length;
+    return { ...it, x, y: 90, dropX, dropY: rimY + 6 };
+  });
+  let inHTML = '';
+  inSources.forEach(it => {
+    inHTML += `
+      <text x="${it.x}" y="${it.y - 14}" text-anchor="middle" font-size="18" fill="var(--muted)">${it.label}</text>
+      <text x="${it.x}" y="${it.y + 14}" text-anchor="middle" font-size="20" font-weight="600" fill="var(--fg)">${fmt.dot(it.dot)} DOT/yr</text>
+      <path id="${svgId}-path-in-${it.id}" d="M ${it.x} ${it.y + 32} Q ${it.x} ${(it.y + it.dropY)/2 + 40} ${it.dropX} ${it.dropY}"
+            fill="none" stroke="var(--border)" stroke-width="1" opacity="0.5"/>
+    `;
+  });
+  inHTML += `
+    <text x="${bucketX + bucketW/2}" y="${rimY - 22}" text-anchor="middle" font-size="14" fill="var(--muted)">total in: ${fmt.dot(totalIn)} DOT/yr</text>
+  `;
+  insG.innerHTML = inHTML;
+
+  // ── Outflows: alternate left/right; each splits into "leaves" and "stays" ──
+  const outsG = svg.querySelector('.bucket-outs');
+  const totalOut = cfg.outflows.reduce((s, x) => s + x.dot, 0);
+  let outsHTML = '';
+  const outDescriptors = cfg.outflows.map((it, i) => {
+    const onRight = (i % 2 === 0);
+    const yFrac = 0.40 + (i * 0.28);
+    const holeY = bucketY + bucketH * yFrac;
+    const holeX = onRight ? bucketX + bucketW - 2 : bucketX + 2;
+    const wRaw = Math.sqrt(it.dot / 1_000_000);
+    const baseW = Math.max(3, wRaw * 1.6);
+    return { ...it, onRight, holeX, holeY, baseW };
+  });
+
+  outDescriptors.forEach(d => {
+    // "Leaves" path: continues out the side toward the screen edge, then fades into off-screen smoke
+    const leavesEndX = d.onRight ? W - 60 : 60;
+    const leavesEndY = d.holeY + 50;
+    const leavesPathD = `M ${d.holeX} ${d.holeY} C ${d.holeX + (d.onRight ? 80 : -80)} ${d.holeY}, ${(d.holeX + leavesEndX)/2} ${leavesEndY - 20}, ${leavesEndX} ${leavesEndY}`;
+    // Stream width scaled to leak proportion
+    const leavesW = Math.max(0.5, d.baseW * leak);
+    const leavesOpacity = (0.4 + leak * 0.5).toFixed(2);
+
+    // "Stays" path: U-turn — goes out the side a bit then curls back over the rim into the bucket
+    const turnX = d.onRight ? d.holeX + 90 : d.holeX - 90;
+    const turnY = d.holeY - 80;
+    const reentryX = bucketX + bucketW / 2;
+    const reentryY = rimY + 8;
+    const staysPathD = `M ${d.holeX} ${d.holeY} C ${turnX} ${d.holeY}, ${turnX} ${turnY}, ${reentryX} ${reentryY}`;
+    const staysW = Math.max(0.5, d.baseW * (1 - leak));
+    const staysOpacity = (0.4 + (1 - leak) * 0.5).toFixed(2);
+
+    // Label location: at the "leaves" endpoint
+    const labelX = d.onRight ? leavesEndX + 14 : leavesEndX - 14;
+    const labelAnchor = d.onRight ? 'start' : 'end';
+    const leakDot = d.dot * leak;
+    const stayDot = d.dot * (1 - leak);
+
+    outsHTML += `
+      <!-- LEAVES path -->
+      <path id="${svgId}-path-leaves-${d.id}" d="${leavesPathD}"
+            fill="none" stroke="#e6007a" stroke-width="${leavesW}" opacity="${leavesOpacity}"
+            stroke-linecap="round"/>
+      <!-- STAYS path -->
+      <path id="${svgId}-path-stays-${d.id}" d="${staysPathD}"
+            fill="none" stroke="#7bd88f" stroke-width="${staysW}" opacity="${staysOpacity}"
+            stroke-linecap="round"/>
+
+      <!-- Source label at the "leaves" terminus -->
+      <text x="${labelX}" y="${leavesEndY - 8}" text-anchor="${labelAnchor}" font-size="18" font-weight="600" fill="var(--fg)">${d.label}</text>
+      <text x="${labelX}" y="${leavesEndY + 14}" text-anchor="${labelAnchor}" font-size="14" fill="var(--muted)">${fmt.dot(d.dot)} DOT/yr</text>
+      <text x="${labelX}" y="${leavesEndY + 32}" text-anchor="${labelAnchor}" font-size="13" fill="#e6007a">leaves ${fmt.dot(leakDot)}</text>
+      <text x="${labelX}" y="${leavesEndY + 48}" text-anchor="${labelAnchor}" font-size="13" fill="#7bd88f">stays ${fmt.dot(stayDot)}</text>
+    `;
+  });
+  // Dot layer drawn last
+  outsHTML += `<g class="dot-layer"></g>`;
+  outsG.innerHTML = outsHTML;
+
+  // ── Liquid level: depends on leak too. With leak=0, return loops fill it back up. ──
+  const ratio = totalIn / totalOut;
+  const baseFill = Math.max(0.04, Math.min(1, Math.log10(ratio + 1.001) * 0.8 + 0.04));
+  // The "stays" fraction is conceptually re-injected — give the bucket a visible level boost when leak<100%
+  const fillFrac = Math.min(0.92, baseFill + (1 - leak) * 0.5);
+  const fillY = bucketY + bucketH * (1 - fillFrac);
+  const liquid = svg.querySelector('.bucket-liquid');
+  liquid.setAttribute('d', `M ${bucketX+6} ${fillY} L ${bucketX+bucketW-6} ${fillY} L ${bucketX+bucketW-12} ${baseY-6} L ${bucketX+12} ${baseY-6} Z`);
+
+  // ── Animated dots ──
+  if (bucketAnims[svgId]) cancelAnimationFrame(bucketAnims[svgId]);
+  const dotLayer = svg.querySelector('.dot-layer');
+  const paths = {};
+  const dots = [];
+
+  inSources.forEach(it => {
+    paths['in-' + it.id] = svg.querySelector(`#${svgId}-path-in-${it.id}`);
+    dots.push({
+      pathKey: 'in-' + it.id,
+      color: '#56b4e9',
+      size: 5,
+      t: Math.random(),
+      speed: 0.4 + Math.random() * 0.1,
+    });
+  });
+
+  outDescriptors.forEach(d => {
+    paths['leaves-' + d.id] = svg.querySelector(`#${svgId}-path-leaves-${d.id}`);
+    paths['stays-' + d.id] = svg.querySelector(`#${svgId}-path-stays-${d.id}`);
+    // Total dot budget for this outflow
+    const totalN = Math.max(4, Math.round(Math.sqrt(d.dot / 1_000_000) * 4));
+    const leavesN = Math.round(totalN * leak);
+    const staysN = totalN - leavesN;
+    for (let k = 0; k < leavesN; k++) {
+      dots.push({
+        pathKey: 'leaves-' + d.id,
+        color: '#e6007a',
+        size: 4 + Math.sqrt(d.dot / 1_000_000) * 0.5,
+        t: k / Math.max(1, leavesN) + Math.random() * 0.04,
+        speed: 0.18 + Math.random() * 0.08,
+        fadeAtEnd: true,
+      });
+    }
+    for (let k = 0; k < staysN; k++) {
+      dots.push({
+        pathKey: 'stays-' + d.id,
+        color: '#7bd88f',
+        size: 4 + Math.sqrt(d.dot / 1_000_000) * 0.5,
+        t: k / Math.max(1, staysN) + Math.random() * 0.04,
+        speed: 0.22 + Math.random() * 0.08,
+      });
+    }
+  });
+
+  let lastT = performance.now();
+  function tick(now) {
+    const dt = (now - lastT) / 1000;
+    lastT = now;
+    let frag = '';
+    dots.forEach(dot => {
+      dot.t += dt * dot.speed;
+      if (dot.t > 1) dot.t -= 1;
+      const path = paths[dot.pathKey];
+      if (!path) return;
+      const len = path.getTotalLength();
+      if (len === 0) return;
+      const p = path.getPointAtLength(dot.t * len);
+      // Leaves dots fade more aggressively at the end (escape into smoke)
+      let op;
+      if (dot.fadeAtEnd) {
+        op = dot.t < 0.05 ? dot.t * 20 : (dot.t > 0.7 ? Math.max(0, (1 - dot.t) / 0.3) : 1);
+      } else {
+        op = dot.t < 0.05 ? dot.t * 20 : (dot.t > 0.95 ? (1 - dot.t) * 20 : 1);
+      }
+      frag += `<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="${dot.size}" fill="${dot.color}" opacity="${op.toFixed(2)}"/>`;
+    });
+    dotLayer.innerHTML = frag;
+    bucketAnims[svgId] = requestAnimationFrame(tick);
+  }
+  bucketAnims[svgId] = requestAnimationFrame(tick);
+
+  // ── Readout ──
+  const readout = readoutId ? document.getElementById(readoutId) : null;
+  if (readout) {
+    const totalLeak = totalOut * leak;
+    const totalStays = totalOut * (1 - leak);
+    readout.innerHTML = `
+      <div class="leak-line"><span class="leak-dot" style="background:#e6007a"></span><b>${fmt.dot(totalLeak)}</b> DOT/yr leaves the economy</div>
+      <div class="leak-line muted"><span class="leak-dot" style="background:#7bd88f"></span><b>${fmt.dot(totalStays)}</b> DOT/yr stays (DeFi, holding, restaking)</div>
+    `;
+  }
+}
+
+// ── Why · 3: validator self-stake dot grid (Mar 1, 2026 snapshot) ──
+const SKIN_DATA = {
+  // From polkapredict March 1 snapshot
+  zero:   462,                       // exactly 0 DOT
+  underTen: 56 + 10 + 5 + 7 + 5,     // 0–10k buckets summed = 83
+  tenPlus: 55,                       // ≥10k
+  total:  600,
+};
+
+function drawSkinGrid() {
+  const wrap = document.getElementById('skin-grid');
+  if (!wrap) return;
+  // Update the legend numbers
+  document.getElementById('skin-zero').textContent = SKIN_DATA.zero;
+  document.getElementById('skin-some').textContent = SKIN_DATA.underTen;
+  document.getElementById('skin-real').textContent = SKIN_DATA.tenPlus;
+
+  // Build the 600 dots, in order: zero → some → real
+  // Grid: 40 cols × 15 rows
+  const total = SKIN_DATA.total;
+  const colors = [];
+  for (let i = 0; i < SKIN_DATA.zero; i++) colors.push('#e6007a');
+  for (let i = 0; i < SKIN_DATA.underTen; i++) colors.push('#f5c451');
+  for (let i = 0; i < SKIN_DATA.tenPlus; i++) colors.push('#7bd88f');
+  // Pad to total if numbers don't sum exactly (shouldn't happen but be safe)
+  while (colors.length < total) colors.push('#444');
+  colors.length = total;
+
+  const dots = colors.map((c, i) => `<span class="skin-cell" style="background:${c}" data-i="${i}"></span>`).join('');
+  wrap.innerHTML = dots;
+
+  // Stagger entrance animation
+  if (wrap.classList.contains('animated')) wrap.classList.remove('animated');
+  void wrap.offsetWidth;
+  wrap.classList.add('animated');
+}
+
+// Hook into show()
+const originalShow = show;
+show = function() {
+  originalShow();
+  const active = grid[s][i];
+  if (!active) return;
+  if (active.dataset.hook === 'bucket') {
+    const slider = document.getElementById('leak-slider');
+    drawBucket('bucket-svg', BUCKET_DEFAULTS, slider ? +slider.value : 50, 'leak-readout');
+  } else if (active.dataset.hook === 'bucketCut') {
+    drawStepChart();
+  } else if (active.dataset.hook === 'embed') {
+    const iframe = document.getElementById('embed-frame');
+    if (iframe && iframe.src.endsWith('about:blank')) iframe.src = 'expenses.html';
+  } else if (active.dataset.hook === 'rolloutPhases') {
+    drawRolloutPhases();
+  } else if (active.dataset.hook === 'skinGrid') {
+    drawSkinGrid();
+  }
+};
+
+// ── What · 1: stepped issuance reduction chart with supply curve ──
+function drawStepChart() {
+  const svg = document.getElementById('step-chart');
+  if (!svg) return;
+  const W = 1200, H = 360;
+  const padL = 80, padR = 90, padT = 36, padB = 60;
+  const innerW = W - padL - padR;
+  const innerH = H - padT - padB;
+
+  // Pre-cut (legacy) point + curve steps
+  const PRE = { yearStart: 2024, yearEnd: 2026, emission: 120 };  // M DOT/yr
+  // Stepped curve constants (mirror config.yaml)
+  const CAP = 2_100_000_000, TI_2026 = 1_674_342_153, RATE = 0.2628, STEP = 2;
+  const ti = (y) => CAP - (CAP - TI_2026) * Math.pow(1 - RATE, Math.max(0, y - 2026) / STEP);
+  const steps = [];
+  for (let y = 2026; y <= 2036; y += STEP) {
+    const emit = (ti(y + STEP) - ti(y)) / STEP / 1e6;  // in M DOT/yr
+    steps.push({ start: y, end: y + STEP, emit });
+  }
+  const xMin = 2024, xMax = 2038;
+  const yLeftMax = 130;     // M DOT/yr
+  const yRightMin = 1.6, yRightMax = 2.15;  // B DOT total supply
+  const sx = (year) => padL + ((year - xMin) / (xMax - xMin)) * innerW;
+  const syL = (m)   => padT + (1 - m / yLeftMax) * innerH;
+  const syR = (b)   => padT + (1 - (b - yRightMin) / (yRightMax - yRightMin)) * innerH;
+
+  let html = '';
+  // Y-left grid + labels (DOT/yr)
+  [0, 30, 60, 90, 120].forEach(v => {
+    const y = syL(v);
+    html += `<line x1="${padL}" y1="${y}" x2="${W - padR}" y2="${y}" stroke="var(--border)" stroke-width="1" opacity="0.35"/>`;
+    html += `<text x="${padL - 12}" y="${y + 4}" text-anchor="end" font-size="12" fill="var(--accent)">${v}M</text>`;
+  });
+  html += `<text x="${padL - 56}" y="${padT + innerH/2}" text-anchor="middle" font-size="12" fill="var(--accent)" font-style="italic" transform="rotate(-90, ${padL - 56}, ${padT + innerH/2})">DOT/yr issued</text>`;
+
+  // Y-right ticks + labels (Supply, B DOT) — color-coded to the supply line
+  [1.6, 1.7, 1.8, 1.9, 2.0, 2.1].forEach(v => {
+    const y = syR(v);
+    if (y < padT - 4 || y > H - padB + 4) return;
+    html += `<text x="${W - padR + 12}" y="${y + 4}" font-size="12" fill="#7bd88f">${v.toFixed(1)}B</text>`;
+  });
+  html += `<text x="${W - padR + 56}" y="${padT + innerH/2}" text-anchor="middle" font-size="12" fill="#7bd88f" font-style="italic" transform="rotate(90, ${W - padR + 56}, ${padT + innerH/2})">total supply</text>`;
+
+  // 2.1B cap line
+  const yCap = syR(2.1);
+  html += `<line x1="${padL}" y1="${yCap}" x2="${W - padR}" y2="${yCap}" stroke="#7bd88f" stroke-width="1" stroke-dasharray="6 6" opacity="0.6"/>`;
+  html += `<text x="${W - padR - 6}" y="${yCap - 6}" text-anchor="end" font-size="11" fill="#7bd88f" font-style="italic">2.1B hard cap</text>`;
+
+  // X axis ticks (every 2 years)
+  for (let y = xMin; y <= xMax; y += 2) {
+    const x = sx(y);
+    html += `<line x1="${x}" y1="${H - padB}" x2="${x}" y2="${H - padB + 5}" stroke="var(--muted)" stroke-width="1"/>`;
+    html += `<text x="${x}" y="${H - padB + 22}" text-anchor="middle" font-size="12" fill="var(--muted)">${y}</text>`;
+  }
+
+  // Pre-cut step (legacy), in muted yellow
+  const xPre1 = sx(PRE.yearStart), xPre2 = sx(PRE.yearEnd), yPre = syL(PRE.emission);
+  html += `<rect x="${xPre1}" y="${yPre}" width="${xPre2 - xPre1}" height="${H - padB - yPre}" fill="rgba(245, 196, 81, 0.12)" stroke="none"/>`;
+  html += `<line x1="${xPre1}" y1="${yPre}" x2="${xPre2}" y2="${yPre}" stroke="var(--warn)" stroke-width="3"/>`;
+  html += `<text x="${(xPre1 + xPre2)/2}" y="${yPre - 10}" text-anchor="middle" font-size="14" font-weight="600" fill="var(--warn)">120M</text>`;
+
+  // Cut marker — vertical line at 2026-03-14 (~2026.2)
+  const cutX = sx(2026.2);
+  html += `<line x1="${cutX}" y1="${padT}" x2="${cutX}" y2="${H - padB}" stroke="var(--accent)" stroke-width="1.5" stroke-dasharray="4 4" opacity="0.7"/>`;
+  html += `<text x="${cutX + 8}" y="${padT - 6}" font-size="11" fill="var(--accent)" font-style="italic">Mar 14, 2026 — Ref 1710</text>`;
+
+  // Stepped curve: each step is a rect + a top line
+  steps.forEach((s, i) => {
+    const x1 = sx(s.start), x2 = sx(s.end), y = syL(s.emit);
+    html += `<rect x="${x1}" y="${y}" width="${x2 - x1}" height="${H - padB - y}" fill="rgba(230, 0, 122, 0.12)" stroke="none"/>`;
+    html += `<line x1="${x1}" y1="${y}" x2="${x2}" y2="${y}" stroke="var(--accent)" stroke-width="3" stroke-linecap="round"/>`;
+    if (i < steps.length - 1) {
+      const yNext = syL(steps[i + 1].emit);
+      html += `<line x1="${x2}" y1="${y}" x2="${x2}" y2="${yNext}" stroke="var(--accent)" stroke-width="3" stroke-linecap="round" opacity="0.6"/>`;
+    }
+    if (s.emit >= 15) {
+      html += `<text x="${(x1 + x2)/2}" y="${y - 8}" text-anchor="middle" font-size="13" font-weight="600" fill="var(--accent)" font-variant-numeric="tabular-nums">${s.emit.toFixed(1)}M</text>`;
+    }
+  });
+
+  // Drop annotation between pre and first step
+  const dropX = sx(2026), drop1Y = syL(PRE.emission), drop2Y = syL(steps[0].emit);
+  html += `<line x1="${dropX}" y1="${drop1Y}" x2="${dropX}" y2="${drop2Y}" stroke="var(--accent)" stroke-width="3" stroke-linecap="round" opacity="0.6"/>`;
+
+  // Total supply curve — smooth dashed green line, 2026 → 2038
+  let supplyPath = '';
+  for (let yr = 2026; yr <= 2038; yr += 0.25) {
+    const x = sx(yr);
+    const tiVal = ti(yr) / 1e9;  // in B
+    const y = syR(tiVal);
+    supplyPath += (supplyPath === '' ? 'M ' : ' L ') + `${x.toFixed(1)} ${y.toFixed(1)}`;
+  }
+  html += `<path d="${supplyPath}" fill="none" stroke="#7bd88f" stroke-width="2.5" stroke-dasharray="6 4" opacity="0.85"/>`;
+  // End-of-curve label
+  const endX = sx(2038), endY = syR(ti(2038)/1e9);
+  html += `<circle cx="${endX}" cy="${endY}" r="4" fill="#7bd88f"/>`;
+  html += `<text x="${endX - 8}" y="${endY - 8}" text-anchor="end" font-size="11" font-weight="600" fill="#7bd88f">${(ti(2038)/1e9).toFixed(2)}B</text>`;
+
+  // Attribution
+  html += `<a href="https://dotless.xyz" target="_blank" xlink:href="https://dotless.xyz">
+    <text x="${W - padR}" y="${H - 4}" text-anchor="end" font-size="10" fill="var(--muted)" font-style="italic" text-decoration="underline">dotless.xyz</text>
+  </a>`;
+
+  svg.innerHTML = html;
+}
+</script>
+
+</body>
+</html>

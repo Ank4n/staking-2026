@@ -14,6 +14,7 @@ meta:
   subtitle: "Drag the knobs governance can actually turn. Everything else is computed."
   today_date: "2026-05-10"
   dot_price_usd: 1.33 # used for $ conversions everywhere
+  dot_price_stops: [1.33, 5, 10, 50, 100] # snap points for the price slider in expenses.html
   assumed_leak_pct:
     50 # % of DOT rewards assumed to leave the economy.
     # No on-chain measurement — rough estimate from staking.md slide 1
@@ -32,7 +33,6 @@ issuance_curve:
   current_ti_dot: 1_675_000_000 # total issuance today, approx (display only — confirm on-chain)
   legacy_inflation: 0.08 # Ref 1139 — flat 8% (for "before" comparison)
   legacy_baseline_dot: 521_634_240 # fixed_total_issuance (planck) / 10^10 — used by legacy curve
-  max_era_emission_dot: 2_301_579 # 7 × PRE_HARD_CAP_DAILY_EMISSION (display only)
 
 # ---------------------------------------------------------------------------
 # Network baseline (today's chain state — used for income projections)
@@ -42,6 +42,7 @@ network:
   active_validators_future: 300 # slide 16 trajectory
   min_validator_stake_dot: 1_276_095 # smallest currently-active validator's backing
   total_staked_dot: 885_012_465 # sum across active set today
+  min_self_stake_dot: 10_000 # Ref 1827 — enforced end of May 2026
 
 # ---------------------------------------------------------------------------
 # INPUTS — what the user can drag
@@ -62,10 +63,10 @@ inputs:
     extrinsic: "dap.set_budget_allocation"
     items:
       - id: buffer
-        label: "Buffer (governance reserve)"
+        label: "Buffer"
         budget_key: 'b"buffer"'
         default_pct: 15
-        note: "Absorbs slashes, burns, fees, treasury redirects. Governance can redirect."
+        note: "Funds treasury and pUSD ops below. Absorbs slashes, burns, fees."
       - id: staker_rewards
         label: "Staker rewards"
         budget_key: 'b"staker_rewards"'
@@ -74,11 +75,25 @@ inputs:
         label: "Validator incentive"
         budget_key: 'b"validator_incentive"'
         default_pct: 0
-      - id: pusd_operational # only visible when modes.pusd is on
-        label: "Operational pUSD"
-        budget_key: 'b"operational"' # speculative key
-        default_pct: 0
-        only_when: modes.pusd
+
+  from_buffer:
+    id: from_buffer
+    label: "From buffer (governance line items)"
+    items:
+      - id: treasury_dot
+        label: "Treasury budget"
+        default: 8_352_158 # HackMD spec year-1 plan
+        min: 0
+        max: 30_000_000
+        step: 100_000
+        unit: "DOT"
+      - id: pusd_per_validator_month
+        label: "pUSD ops / validator / month"
+        default: 0
+        min: 0
+        max: 10_000
+        step: 100
+        unit: "$"
 
   validator_probe:
     id: validator_probe
@@ -87,13 +102,13 @@ inputs:
       - id: own_stake
         label: "Validator self-stake (DOT)"
         default: 30_000
-        min: 0
+        min: 10_000 # Ref 1827 floor
         max: 1_000_000
         step: 1_000
       - id: commission_pct
         label: "Validator commission"
-        default: 5
-        min: 0
+        default: 10 # Ref 1872 enforced 1 Apr 2026
+        min: 10
         max: 100
         step: 1
         unit: "%"
@@ -112,27 +127,6 @@ inputs:
     max: 1_000_000
     step: 10_000
     note: "Used to estimate any one validator's share of the incentive pot. Actual chain mean — set to your best guess."
-
-  pusd_amount: # only relevant when modes.pusd is on
-    id: pusd_amount
-    label: "Validator operational pay (pUSD/month)"
-    default: 2000
-    min: 0
-    max: 10000
-    step: 100
-    unit: "$"
-
-# ---------------------------------------------------------------------------
-# Mode toggles
-# ---------------------------------------------------------------------------
-# DAP is always on at PAH 2.3.0. Self-stake "active" = validator_incentive > 0
-# in the budget split. Only the pUSD stream is a separate mode (Q4 plan).
-modes:
-  pusd:
-    id: pusd
-    label: "pUSD operational stream (Q4)"
-    default: false
-    note: "Adds 4th DAP destination; validators paid in pUSD"
 
 # ---------------------------------------------------------------------------
 # Self-stake incentive curve — frozen defaults, NOT user-editable
@@ -166,16 +160,31 @@ kpis:
     unit: "count"
 
 # ---------------------------------------------------------------------------
-# Scenario presets (header buttons)
+# Scenario presets — surfaced as buttons in the expenses tool.
+# Any field name listed in `sets` must match an input id.
 # ---------------------------------------------------------------------------
 presets:
   - id: launch
-    label: "PAH 2.3.0 launch"
+    label: "Launch (today)"
+    sub: "PAH 2.3.0 — staker-rewards only"
     sets:
-      modes.pusd: false
       dap_split.buffer: 15
       dap_split.staker_rewards: 85
       dap_split.validator_incentive: 0
+      from_buffer.treasury_dot: 0
+      from_buffer.pusd_per_validator_month: 0
+      validator_count: 600
+
+  - id: future
+    label: "Future state"
+    sub: "Smaller set, all 3 streams active"
+    sets:
+      dap_split.buffer: 40
+      dap_split.staker_rewards: 42
+      dap_split.validator_incentive: 18
+      from_buffer.treasury_dot: 8_352_158
+      from_buffer.pusd_per_validator_month: 2000
+      validator_count: 300
 
 # ---------------------------------------------------------------------------
 # Sources — for tooltip footnotes
@@ -186,3 +195,51 @@ sources:
   budget_allocation: "pallet-dap — BudgetAllocation storage; set_budget_allocation extrinsic"
   self_stake_curve: "pallet-staking-async — reward.rs::incentive_weight; OptimumSelfStake / HardCapSelfStake / SelfStakeSlopeFactor"
   pusd_stream: "Q4 2026 plan — direction approved, mechanics (CR, vault) still open"
+
+# ---------------------------------------------------------------------------
+# Timeline (used by when.html)
+# ---------------------------------------------------------------------------
+timeline:
+  phases:
+    - id: 0
+      label: "Already done"
+      when: "Mar 14, 2026"
+      status: "done"
+      title: "Issuance reduction"
+      what: "120M → 55M DOT/year. Hard-pressure model, supply capped at 2.1B."
+      why: "Reduce inflation."
+    - id: 1
+      label: "Phase 1"
+      when: "Now → end of May"
+      status: "imminent"
+      title: "Validator self-stake"
+      what: "Referendum to enforce 10% min commission. End of May: 10k self-stake floor enforced. Chill threshold lowered progressively to push non-compliant validators out."
+      why: "Validators must carry real skin in the game before nominator risk drops."
+    - id: 2
+      label: "Phase 2"
+      when: "Mid June 2026"
+      status: "planned"
+      title: "Budget split"
+      what: "Referendum to propose budget for the split."
+      why: "Incentivise validator self-stake. Reduce nominator APY."
+    - id: 3
+      label: "Phase 3"
+      when: "When ~600 validators are compliant"
+      status: "planned"
+      title: "Nominator changes"
+      what: "Unslashable. 2-day unbond replaces 28-day."
+      why: "Only safe once validators carry the security weight via real self-stake. Timing depends on compliance."
+    - id: 4
+      label: "Phase 4"
+      when: "EOY 2026 phased"
+      status: "planned"
+      title: "Validator set reduction"
+      what: "600 → ~400 over 3 months, then onward to ~250. Final number gated on technical review."
+      why: "Reduces protocol cost further. Coretime redesign (RFC17) makes a smaller set viable."
+    - id: 5
+      label: "Phase 5"
+      when: "After pUSD timeline"
+      status: "planned"
+      title: "pUSD operational pay"
+      what: "Part of validator pay shifts to stablecoins. Tracks pUSD's own rollout +1 month."
+      why: "Decouples infra cost from DOT price. Matters more when DOT rises."
