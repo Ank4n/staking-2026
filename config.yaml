@@ -165,7 +165,7 @@ kpis:
 # ---------------------------------------------------------------------------
 presets:
   - id: launch
-    label: "June launch"
+    label: "launch"
     sub: "PAH 2.3.0"
     sets:
       dap_split.buffer: 15
@@ -175,13 +175,24 @@ presets:
       from_buffer.pusd_per_validator_month: 0
       validator_count: 600
 
+  - id: june
+    label: "June split"
+    sub: "Smaller set, all 3 streams active"
+    sets:
+      dap_split.buffer: 25
+      dap_split.staker_rewards: 50
+      dap_split.validator_incentive: 25
+      from_buffer.treasury_dot: 0
+      from_buffer.pusd_per_validator_month: 0
+      validator_count: 600
+
   - id: future
     label: "Target state"
     sub: "Smaller set, all 3 streams active"
     sets:
-      dap_split.buffer: 45
+      dap_split.buffer: 49
       dap_split.staker_rewards: 48
-      dap_split.validator_incentive: 7
+      dap_split.validator_incentive: 3
       from_buffer.treasury_dot: 8_352_158
       from_buffer.pusd_per_validator_month: 2000
       validator_count: 250
