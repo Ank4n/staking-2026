@@ -190,9 +190,9 @@ presets:
     label: "Target state"
     sub: "Smaller set, all 3 streams active"
     sets:
-      dap_split.buffer: 49
-      dap_split.staker_rewards: 48
-      dap_split.validator_incentive: 3
+      dap_split.buffer: 65
+      dap_split.staker_rewards: 31
+      dap_split.validator_incentive: 4
       from_buffer.treasury_dot: 8_352_158
       from_buffer.pusd_per_validator_month: 2000
       validator_count: 250
